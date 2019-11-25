@@ -60,7 +60,7 @@ Usage
 -  ``ploidy``: Ploidy for freebayes, e.g. 1 for haploid, 2 for diploid.
 -  ``threads``: Number of threads to use. Intermediate files are pipes,
    so at least 4 threads are required.
--  ``restart_times``: Number of times to restart failing jobs
+-  ``restart_times``: Number of times to restart failing jobs.
 
 ::
 
