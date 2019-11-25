@@ -85,7 +85,15 @@ def main():
         lock=False,
         printreason=True,
         printshellcmds=True,
-        dryrun=True if args['dry_run'] else False)
+        dryrun=True if args['dry_run'] else False,
+        use_singularity=True,
+        singularity_args=('-B ${PWD} '
+                          '-H $(mktemp -d) '
+                          '--pwd ${PWD} '
+                          '--containall '
+                          '--cleanenv '
+                          '--writable-tmpfs')
+        )
 
 
 if __name__ == '__main__':
