@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+
+from pathlib import Path
+import pandas
+import logging
+
+
+#############
+# FUNCTIONS #
+#############
+
+def aggregate_regions(wildcards):
+    co = checkpoints.generate_regions.get(**wildcards).output['region']
+    r = glob_wildcards(Path(co, 'r{region}')).region
+    return expand(Path(calldir, 'regions', 'r{region}.vcf').as_posix(),
+                  region=r)
+
+
+def resolve_raw_fastq(wildcards):
+    return({
+        'r1': sample_data.loc[wildcards.sample_name, 'r1_path'],
+        'r2': sample_data.loc[wildcards.sample_name, 'r2_path']
+        })
+
+
+###########
+# GLOBALS #
+###########
+
+# get config
+# configfile: 'config.yaml' # get path from entry point
+ref = config['ref']
+outdir = config['outdir']
+max_threads = config['threads']
+
+# set up directories
+logdir = Path(outdir, 'logs')
+statdir = Path(outdir, 'stats')
+tmpdir = Path(outdir, 'tmp')
+trimdir = Path(outdir, '010_trim')
+mapdir = Path(outdir, '020_map')
+calldir = Path(outdir, '030_calls')
+
+# for filtering and trimming
+bbduk_ref = '/phix174_ill.ref.fa.gz'
+bbduk_adaptors = '/adapters.fa'
+
+# set diploid mode for freebayes
+diploid_mode = config['ploidy']
+
+# containers
+bbmap = 'shub://TomHarrop/singularity-containers:bbmap_38.50b'          # fixme
+bwa = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'              # fixme
+freebayes = ('shub://TomHarrop/variant-utils:freebayes_1.3.1'
+             '@f2cc069c8bcdaac7c3dd4f73cfc555a270e49ae2')
+samtools = 'shub://TomHarrop/singularity-containers:samtools_1.9'       # fixme
+vcflib = ('shub://TomHarrop/variant-utils:vcflib_1.0.1'
+          '@be31d01e882526682d120e00e9990f94522badc7')
+
+
+########
+# MAIN #
+########
+
+# what got passed
+logging.debug(f'Snakefile config\n{config}')
+
+# get a list of individuals from the csv
+sample_data = pandas.read_csv('samples.csv',
+                              index_col='sample')
+all_samples = sorted(set(sample_data.index))
+exlude_for_now = ['BB14_pools', 'BB22_pools', 'BB48_drones']
+all_samples = [x for x in all_samples if x not in exlude_for_now]
+
+# subset for testing
+all_samples = ['BB16_pools', 'BB54_pools']
+
+#########
+# RULES #
+#########
+
+rule target:
+    input:
+        Path(outdir, 'calls.vcf.gz'),
+        Path(outdir, 'merged.bam.bai')
+
+
+rule merge_bam: # for visualisation
+    input:
+        bam = expand(Path(mapdir, '{sample_name}.bam').as_posix(),
+                     sample_name=all_samples),
+    output:
+        Path(outdir, 'merged.bam')
+    log:
+        Path(logdir, 'merge_bam.log')
+    threads:
+        max_threads
+    singularity:
+        samtools
+    shell:
+        'samtools merge '
+        '-l 9 '
+        '-O BAM '
+        '-@ {threads} '
+        '{output} '
+        '{input.bam} '
+        '2> {log}'
+
+rule vcfuniq:
+    input:
+        Path(tmpdir, 'all_sort.vcf')
+    output:
+        Path(outdir, 'calls.vcf')
+    singularity:
+        freebayes
+    shell:
+        'vcfuniq < {input} > {output}'
+
+
+rule vcfstreamsort:
+    input:
+        Path(tmpdir, 'all_oneheader.vcf')
+    output:
+        pipe(Path(tmpdir, 'all_sort.vcf'))
+    singularity:
+        freebayes
+    shell:
+        'vcfstreamsort -w 1000 < {input} >> {output}'
+
+
+rule vcffirstheader:
+    input:
+        Path(tmpdir, 'all.vcf')
+    output:
+        pipe(Path(tmpdir, 'all_oneheader.vcf'))
+    singularity:
+        freebayes
+    shell:
+        'vcffirstheader < {input} >> {output}'
+
+rule combine_vcf:
+    input:
+        aggregate_regions
+    output:
+        pipe(Path(tmpdir, 'all.vcf'))
+    singularity:
+        freebayes
+    shell:
+        'cat {input} >> {output}'
+
+rule freebayes:
+    input:
+        bam = expand(Path(mapdir, '{sample_name}.bam').as_posix(),
+                     sample_name=all_samples),
+        bai = expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
+                     sample_name=all_samples),
+        region = Path(outdir, '015_ref', 'regions', 'r{region}'),
+        fa = Path(outdir, '015_ref', 'ref.fasta')
+    output:
+        vcf = Path(calldir, 'regions', 'r{region}.vcf')
+    params:
+        ploidy = diploid_mode
+    log:
+        Path(logdir, 'r{region}_freebayes.log')
+    singularity:
+        freebayes
+    shell:
+        'freebayes '
+        '--region  "$(cat {input.region})" '
+        '--ploidy {params.ploidy} '
+        '-f {input.fa} '
+        '{input.bam} '
+        '> {output} '
+        '2> {log}'
+
+rule markdup:
+    input:
+        Path(tmpdir, '{sample_name}_sort.bam')
+    output:
+        Path(mapdir, '{sample_name}.bam')
+    threads:
+        max_threads // 3
+    log:
+        Path(logdir, '{sample_name}_markdup.log')
+    singularity:
+        samtools
+    shell:
+        'samtools markdup '
+        '-@ {threads} '
+        '-s '
+        '{input} '
+        '{output} '
+        '2> {log}'
+
+rule sort:
+    input:
+        Path(tmpdir, '{sample_name}_fixmate.bam')
+    output:
+        pipe(Path(tmpdir, '{sample_name}_sort.bam'))
+    threads:
+        max_threads // 3
+    log:
+        Path(logdir, '{sample_name}_sort.log')
+    singularity:
+        samtools
+    shell:
+        'samtools sort '
+        '-@ {threads} '
+        '{input} '
+        '>> {output} '
+        '2> {log}'
+
+
+rule fixmate:
+    input:
+        Path(tmpdir, '{sample_name}.sam')
+    output:
+        pipe(Path(tmpdir, '{sample_name}_fixmate.bam'))
+    threads:
+        max_threads // 3
+    log:
+        Path(logdir, '{sample_name}_fixmate.log')
+    singularity:
+        samtools
+    shell:
+        'samtools fixmate '
+        '-m '
+        '-@ {threads} '
+        '{input} '
+        '- '
+        '>> {output} '
+        '2> {log}'
+
+rule bwa_map:
+    input:
+        fq = Path(trimdir, '{sample_name}.fastq'),
+        index = expand(Path(outdir, '015_ref', 'ref.fasta.{suffix}').as_posix(),
+                       suffix=['amb', 'ann', 'bwt', 'pac', 'sa'])
+    output:
+        temp(Path(tmpdir, '{sample_name}.sam'))
+    params:
+        prefix = Path(outdir, '015_ref', 'ref.fasta'),
+        rg = '\'@RG\\tID:{sample_name}\\tSM:{sample_name}\''
+    threads:
+        max_threads
+    log:
+        Path(logdir, '{sample_name}_bwa-map.log')
+    singularity:
+        bwa
+    shell:
+        'bwa mem '
+        '-t {threads} '
+        '-p '
+        '-R {params.rg} '
+        '{params.prefix} '
+        '{input.fq} '
+        '> {output} '
+        '2> {log}'
+
+rule trim:
+    input:
+        Path(tmpdir, '{sample_name}_filter.fastq')
+    output:
+        fastq = Path(trimdir, '{sample_name}.fastq'),
+        stats = Path(statdir, '{sample_name}_trim.txt')
+    log:
+        Path(logdir, '{sample_name}_trim.log')
+    params:
+        trim = bbduk_adaptors
+    singularity:
+        bbmap
+    shell:
+        'bbduk.sh '
+        'in={input} '
+        'int=t '
+        'out={output.fastq} '
+        'ref={params.trim} '
+        'ktrim=r k=23 mink=11 hdist=1 tpe tbo '
+        'forcetrimmod=5 '
+        'stats={output.stats} '
+        '2> {log}'
+
+rule filter:
+    input:
+        Path(tmpdir, '{sample_name}_check-barcodes.fastq')
+    output:
+        pipe = pipe(Path(tmpdir, '{sample_name}_filter.fastq')),
+        stats = Path(statdir, '{sample_name}_filter.txt')
+    log:
+        Path(logdir, '{sample_name}_filter.log')
+    params:
+        filter = bbduk_ref,
+    singularity:
+        bbmap
+    shell:
+        'bbduk.sh '
+        'in={input} '
+        'int=t '
+        'out=stdout.fastq '
+        'ref={params.filter} '
+        'hdist=1 '
+        'stats={output.stats} '
+        '>>{output.pipe} '
+        '2> {log}'
+
+
+rule check_barcodes:
+    input:
+        Path(tmpdir, '{sample_name}_repair.fastq')
+    output:
+        pipe = pipe(Path(tmpdir, '{sample_name}_check-barcodes.fastq'))
+    params:
+        barcode = lambda wildcards:
+            sample_data.loc[wildcards.sample_name, 'barcode']
+    log:
+        Path(statdir, '{sample_name}_check-barcodes.txt')
+    singularity:
+        bbmap
+    shell:
+        'reformat.sh '
+        'in={input} '
+        'int=t '
+        'out=stdout.fastq '
+        'barcodefilter=t '
+        'barcodes=\'{params.barcode}\' '
+        '>> {output.pipe} '
+        '2> {log}'
+
+rule check_pairing:
+    input:
+        unpack(resolve_raw_fastq)
+    output:
+        pipe = pipe(Path(tmpdir, '{sample_name}_repair.fastq')),
+    log:
+        Path(statdir, '{sample_name}_repair.txt')
+    singularity:
+        bbmap
+    shell:
+        'repair.sh '
+        'in={input.r1} '
+        'in2={input.r2} '
+        'out=stdout.fastq '
+        '>> {output.pipe} '
+        '2> {log}'
+
+# bwa index rule
+rule bwa_index:
+    input:
+        ref
+    output:
+        expand(Path(outdir, '015_ref', 'ref.fasta.{suffix}').as_posix(),
+               suffix=['amb', 'ann', 'bwt', 'pac', 'sa'])
+    params:
+        prefix = Path(outdir, '015_ref', 'ref.fasta')
+    log:
+        Path(logdir, 'bwa_index.log')
+    singularity:
+        bwa
+    shell:
+        'bwa index '
+        '-p {params.prefix} '
+        '{input} '
+        '2> {log}'
+
+# generate regions for freebayes
+checkpoint generate_regions:
+    input:
+        fai = Path(outdir, '015_ref', 'ref.fasta.fai')
+    output:
+        region = directory(Path(outdir, '015_ref', 'regions'))
+    params:
+        prefix = Path(outdir, '015_ref', 'regions', 'r')
+    singularity:
+        freebayes
+    shell:
+        'mkdir {output.region} ; '
+        'awk '
+        '\'{{printf("%s:1-%d\\n",$1,$2);}}\' '
+        '{input} '
+        '| '
+        'split '
+        '-a 4 '
+        '-l 1 '
+        '-d '
+        '- '
+        '{params.prefix}'
+
+# fasta index rule
+rule fa_index:
+    input:
+        ref
+    output:
+        fa = Path(outdir, '015_ref', 'ref.fasta'),
+        fai = Path(outdir, '015_ref', 'ref.fasta.fai')
+    singularity:
+        samtools
+    shell:
+        'cp {input} {output.fa} '
+        '; '
+        'samtools faidx {output.fa}'
+
+# generic index rule
+rule index_vcf:
+    input:
+        Path('{folder}', '{file}.vcf')
+    output:
+        gz = Path('{folder}', '{file}.vcf.gz'),
+        tbi = Path('{folder}', '{file}.vcf.gz.tbi')
+    log:
+        Path(logdir, '{folder}', '{file}_index-vcf.log')
+    singularity:
+        samtools
+    shell:
+        'bgzip -c {input} > {output.gz} 2> {log} '
+        '; '
+        'tabix -p vcf {output.gz} 2>> {log}'
+
+# generic reheader rule
+rule reheader_vcf:
+    input:
+        Path('{folder}', '{file}.vcf')
+    output:
+        Path('{folder}', '{file}_reheadered.vcf')
+    singularity:
+        samtools
+    shell:
+        'grep -v "^##FILTER=All filters passed" {input} > {output}'
+
+# generic bamfile index
+rule index_bamfile:
+    input:
+        Path('{folder}', '{file}.bam')
+    output:
+        Path('{folder}', '{file}.bam.bai')
+    log:
+        Path(logdir, '{folder}', '{file}_index-bamfile.log')
+    threads:
+        2
+    singularity:
+        samtools
+    shell:
+        'samtools index -@ {threads} {input} 2> {log}'
+
