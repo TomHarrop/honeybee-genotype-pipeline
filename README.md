@@ -32,15 +32,19 @@ vcflib 1.0.1
 
 ## Usage
 
-- `ref`: Reference genome (uncompressed fasta)
+- `ref`: Reference genome (uncompressed fasta).
 - `samples_csv`: a csv file with the following columns:
     - `sample`: sample name (will be propagated to output files and VCF);
     - `barcode`: sample barcode, will be checked with 0 allowed mismatches;
     - `r1_path`: path to R1 file;
     - `r2_path`: path to R2 file;
-    - `metadata` (optional): currently not used
+    - `metadata` (optional): currently not used.
+- `outdir`: Output directory.
+- `ploidy`: Ploidy for freebayes, e.g. 1 for haploid, 2 for diploid.
+- `threads`: Number of threads to use. Intermediate files are pipes, so at least 4 threads are required.
+- `restart_times`: Number of times to restart failing jobs
 
-```bash
+```
 honeybee-genotype-pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
                                   --outdir OUTDIR [--ploidy PLOIDY]
                                   [--threads int]
@@ -65,4 +69,4 @@ optional arguments:
 
 ![](graph.svg)
 
-^*^: `freebayes` doesn't show in the graph because it comes after a [checkpoint rule](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution)
+**n.b.** `freebayes` doesn't print in the `snakemake` rulegraph, because it comes after a [checkpoint rule](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution). The input is from `markdup` and `generate_regions`.

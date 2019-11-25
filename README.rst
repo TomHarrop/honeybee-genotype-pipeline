@@ -37,7 +37,7 @@ hub <https://singularity-hub.org/collections/3839>`__.
 Usage
 -----
 
--  ``ref``: Reference genome (uncompressed fasta)
+-  ``ref``: Reference genome (uncompressed fasta).
 -  ``samples_csv``: a csv file with the following columns:
 
    -  ``sample``: sample name (will be propagated to output files and
@@ -46,9 +46,15 @@ Usage
       mismatches;
    -  ``r1_path``: path to R1 file;
    -  ``r2_path``: path to R2 file;
-   -  ``metadata`` (optional): currently not used
+   -  ``metadata`` (optional): currently not used.
 
-.. code:: bash
+-  ``outdir``: Output directory.
+-  ``ploidy``: Ploidy for freebayes, e.g. 1 for haploid, 2 for diploid.
+-  ``threads``: Number of threads to use. Intermediate files are pipes,
+   so at least 4 threads are required.
+-  ``restart_times``: Number of times to restart failing jobs
+
+::
 
    honeybee-genotype-pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
                                      --outdir OUTDIR [--ploidy PLOIDY]
@@ -73,9 +79,10 @@ Graph
 
 |image1|
 
-^*^: ``freebayes`` doesn’t show in the graph because it comes after a
-`checkpoint
-rule <https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution>`__
+**n.b.** ``freebayes`` doesn’t print in the ``snakemake`` rulegraph,
+because it comes after a `checkpoint
+rule <https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution>`__.
+The input is from ``markdup`` and ``generate_regions``.
 
 .. |image0| image:: https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg
    :target: https://singularity-hub.org/collections/3839
