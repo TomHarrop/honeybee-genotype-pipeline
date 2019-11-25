@@ -2,7 +2,7 @@ Bootstrap: docker
 From: ubuntu:19.10
 
 %help
-    Container for honeybee-genotype-pipeline
+    Container for honeybee-genotype-pipeline v0.0.1
     https://github.com/tomharrop/honeybee-genotype-pipeline
 
     bbmap 38.73
@@ -41,19 +41,19 @@ _EOF_
     apt-get update
     apt-get install -y \
         build-essential \
+        bwa \
+        default-jre-headless \
         git \
         libbz2-dev \
         liblzma-dev \
-        python3 \
-        wget \
-        zlib1g-dev \
         libtabixpp-dev \
         parallel \
         python \
-        bwa \
-        samtools \
-        default-jre-headless \
+        python3 \
         python3-pip \
+        samtools \
+        wget \
+        zlib1g-dev
 
     # bbmap
     wget -O "bbmap.tar.gz" \
@@ -98,4 +98,4 @@ _EOF_
     # install pipeline package
     /usr/bin/pip3 \
         install \
-        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git
+        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.1

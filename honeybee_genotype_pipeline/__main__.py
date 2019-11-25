@@ -12,7 +12,6 @@ from pkg_resources import resource_filename
 #############
 
 def parse_arguments():
-    # parse arguments
     parser = argparse.ArgumentParser(
         prog='honeybee-genotype-pipeline')
     parser.add_argument(
@@ -93,15 +92,7 @@ def main():
         printreason=True,
         printshellcmds=True,
         dryrun=True if args['dry_run'] else False,
-        use_singularity=True,
-        singularity_args=('-B ${PWD} '
-                          '-H $(mktemp -d) '
-                          '--pwd ${PWD} '
-                          '--containall '
-                          '--cleanenv '
-                          '--writable-tmpfs'),
-        restart_times=args['restart_times']
-        )
+        restart_times=args['restart_times'])
 
 
 if __name__ == '__main__':
