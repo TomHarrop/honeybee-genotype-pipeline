@@ -32,6 +32,7 @@ def resolve_raw_fastq(wildcards):
 ref = config['ref']
 outdir = config['outdir']
 max_threads = config['threads']
+samples_csv = config['samples_csv']
 
 # set up directories
 logdir = Path(outdir, 'logs')
@@ -66,14 +67,14 @@ vcflib = ('shub://TomHarrop/variant-utils:vcflib_1.0.1'
 logging.debug(f'Snakefile config\n{config}')
 
 # get a list of individuals from the csv
-sample_data = pandas.read_csv('samples.csv',
+sample_data = pandas.read_csv(samples_csv,
                               index_col='sample')
 all_samples = sorted(set(sample_data.index))
-exlude_for_now = ['BB14_pools', 'BB22_pools', 'BB48_drones']
-all_samples = [x for x in all_samples if x not in exlude_for_now]
+# exlude_for_now = ['BB14_pools', 'BB22_pools', 'BB48_drones']
+# all_samples = [x for x in all_samples if x not in exlude_for_now]
 
-# subset for testing
-all_samples = ['BB16_pools', 'BB54_pools']
+logging.debug(f'All samples:\n{all_samples}')
+
 
 #########
 # RULES #

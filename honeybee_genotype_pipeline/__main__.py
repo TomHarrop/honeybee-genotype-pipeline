@@ -22,6 +22,12 @@ def parse_arguments():
         type=str,
         dest='ref')
     parser.add_argument(
+        '--samples_csv',
+        required=True,
+        help='Sample csv (see README)',
+        type=str,
+        dest='samples_csv')
+    parser.add_argument(
         '--outdir',
         required=True,
         help='Output directory',
