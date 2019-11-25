@@ -34,6 +34,14 @@ hub <https://singularity-hub.org/collections/3839>`__.
    samtools 1.9 and bcftools 1.9 using htslib 1.9
    vcflib 1.0.1
 
+If you have the above dependencies installed, you can install the
+pipeline with ``pip3``:
+
+.. code:: bash
+
+   pip3 install \
+       git+git://github.com/tomharrop/honeybee-genotype-pipeline.git
+
 Usage
 -----
 
