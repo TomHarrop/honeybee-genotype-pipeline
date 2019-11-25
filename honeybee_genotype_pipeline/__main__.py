@@ -49,6 +49,13 @@ def parse_arguments():
         dest='threads',
         default=default_threads)
     parser.add_argument(
+        '--restart_times',
+        required=False,
+        help='number of times to restart failing jobs (default 0)',
+        type=int,
+        dest='restart_times',
+        default=0)
+    parser.add_argument(
         '-n',
         help='Dry run',
         dest='dry_run',
@@ -92,7 +99,8 @@ def main():
                           '--pwd ${PWD} '
                           '--containall '
                           '--cleanenv '
-                          '--writable-tmpfs')
+                          '--writable-tmpfs'),
+        restart_times=args['restart_times']
         )
 
 
