@@ -52,7 +52,7 @@ pip3 install \
 - `restart_times`: Number of times to restart failing jobs.
 
 ```
-honeybee-genotype-pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
+honeybee_genotype_pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
                                   --outdir OUTDIR [--ploidy PLOIDY]
                                   [--threads int]
                                   [--restart_times RESTART_TIMES] [-n]
