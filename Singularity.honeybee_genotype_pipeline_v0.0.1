@@ -84,7 +84,7 @@ _EOF_
     git submodule update --init --recursive
     make
 
-    # fix the scripts
+    # fix freebayes scripts
     sed \
         's/..\/vcflib\/scripts\/vcffirstheader/vcffirstheader/g' \
         scripts/freebayes-parallel \
