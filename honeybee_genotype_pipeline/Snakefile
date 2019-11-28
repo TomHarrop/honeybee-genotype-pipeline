@@ -3,6 +3,7 @@
 from pathlib import Path
 import pandas
 import logging
+import shutil
 
 
 #############
@@ -21,6 +22,10 @@ def resolve_raw_fastq(wildcards):
         'r1': sample_data.loc[wildcards.sample_name, 'r1_path'],
         'r2': sample_data.loc[wildcards.sample_name, 'r2_path']
         })
+
+
+def resolve_path(x):
+    return str(Path(x).resolve())
 
 
 ###########
@@ -49,6 +54,15 @@ bbduk_adaptors = '/adapters.fa'
 # set diploid mode for freebayes
 diploid_mode = config['ploidy']
 
+# dict of extensions and arguments for vcftools
+ext_to_arg = {
+    'frq': 'freq2 --max-alleles 2',
+    'idepth': 'depth',
+    'ldepth.mean': 'site-mean-depth',
+    'lqual': 'site-quality',
+    'imiss': 'missing-indv',
+    'lmiss': 'missing-site'}
+
 # containers (dev)
 # bbmap = 'shub://TomHarrop/singularity-containers:bbmap_38.50b'          # fixme
 # bwa = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'              # fixme
@@ -57,7 +71,8 @@ diploid_mode = config['ploidy']
 # samtools = 'shub://TomHarrop/singularity-containers:samtools_1.9'       # fixme
 # vcflib = ('shub://TomHarrop/variant-utils:vcflib_1.0.1'
 #           '@be31d01e882526682d120e00e9990f94522badc7')
-
+# r = 'shub://TomHarrop/r-containers:r_3.6.1'
+# vcftools = 'shub://TomHarrop/variant-utils:vcftools_0.1.16'
 
 ########
 # MAIN #
@@ -78,8 +93,60 @@ logging.debug(f'All samples:\n{all_samples}')
 
 rule target:
     input:
-        Path(outdir, 'calls.vcf.gz'),
-        Path(outdir, 'merged.bam.bai')
+        Path(outdir, 'merged.bam.bai'),
+        Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv'),
+        expand(Path(outdir, '050_plots', '{ext}.pdf').as_posix(),
+               ext=list(ext_to_arg.keys()))
+
+
+rule calculate_ldepth_cutoff:
+    input:
+        stats = Path(outdir, '040_stats', 'stats.ldepth.mean')
+    output:
+        csv = Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv')
+    log:
+        Path(logdir, 'calculate_ldepth_cutoff.log')
+    # singularity:
+    #     r
+    script:
+        shutil.which('calculate_ldepth_cutoff.R')
+
+rule plot_stats:
+    input:
+        Path(outdir, '040_stats', 'stats.{ext}')
+    output:
+        Path(outdir, '050_plots', '{ext}.pdf')
+    log:
+        Path(logdir, 'plot_{ext}.log')
+    # singularity:
+    #     r
+    shell:
+        'plot_{wildcards.ext}.R '
+        '{input} '
+        '{output} '
+        '&> {log}'
+
+
+rule vcf_stats:
+    input:
+        Path(outdir, 'calls.vcf.gz')
+    output:
+        Path(outdir, '040_stats', 'stats.{ext}')
+    log:
+        Path(logdir, 'stats_{ext}.log')
+    params:
+        wd = Path(outdir, '040_stats'),
+        arg = lambda wildcards: ext_to_arg[wildcards.ext]
+    # singularity:
+    #     vcftools
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'vcftools '
+        '--gzvcf '
+        + resolve_path('{input}') + ' '
+        '--{params.arg} '
+        '--out stats '
+        '2> ' + resolve_path('{log}')
 
 
 rule merge_bam:        # for visualisation

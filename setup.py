@@ -13,7 +13,7 @@ def readme():
 
 setup(
     name='honeybee_genotype_pipeline',
-    version='0.0.1',
+    version='0.0.2',
     description='python3 wrapper for calling genotypes',
     long_description=readme(),
     url='https://github.com/tomharrop/honeybee-genotype-pipeline',
@@ -29,6 +29,15 @@ setup(
         'console_scripts': [
             'honeybee_genotype_pipeline = honeybee_genotype_pipeline.__main__:main'
             ],
+    },
+    scripts={
+        'honeybee_genotype_pipeline/src/calculate_ldepth_cutoff.R',
+        'honeybee_genotype_pipeline/src/plot_frq.R',
+        'honeybee_genotype_pipeline/src/plot_idepth.R',
+        'honeybee_genotype_pipeline/src/plot_imiss.R',
+        'honeybee_genotype_pipeline/src/plot_ldepth.mean.R',
+        'honeybee_genotype_pipeline/src/plot_lmiss.R',
+        'honeybee_genotype_pipeline/src/plot_lqual.R'
     },
     package_data={
         'honeybee_genotype_pipeline': [
