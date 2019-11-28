@@ -10,7 +10,7 @@ mellifera*.
 4. Trim adaptors
 5. Map against reference genome
 6. Call SNPs with ``freebayes`` (each contig run separately in parallel)
-7. Genotyping stats (**not implemented**)
+7. Genotyping stats
 
 In another pipeline (coming soon):
 
