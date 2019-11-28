@@ -63,16 +63,6 @@ ext_to_arg = {
     'imiss': 'missing-indv',
     'lmiss': 'missing-site'}
 
-# containers (dev)
-# bbmap = 'shub://TomHarrop/singularity-containers:bbmap_38.50b'          # fixme
-# bwa = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'              # fixme
-# freebayes = ('shub://TomHarrop/variant-utils:freebayes_1.3.1'
-#              '@f2cc069c8bcdaac7c3dd4f73cfc555a270e49ae2')
-# samtools = 'shub://TomHarrop/singularity-containers:samtools_1.9'       # fixme
-# vcflib = ('shub://TomHarrop/variant-utils:vcflib_1.0.1'
-#           '@be31d01e882526682d120e00e9990f94522badc7')
-# r = 'shub://TomHarrop/r-containers:r_3.6.1'
-# vcftools = 'shub://TomHarrop/variant-utils:vcftools_0.1.16'
 
 ########
 # MAIN #
@@ -87,12 +77,16 @@ sample_data = pandas.read_csv(samples_csv,
 all_samples = sorted(set(sample_data.index))
 logging.debug(f'All samples:\n{all_samples}')
 
+
 #########
 # RULES #
 #########
 
 rule target:
     input:
+        Path(outdir, 'calls.vcf.gz'),
+        Path(outdir, 'calls.vcf.gz.tbi'),
+        Path(outdir, 'merged.bam'),
         Path(outdir, 'merged.bam.bai'),
         Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv'),
         expand(Path(outdir, '050_plots', '{ext}.pdf').as_posix(),
@@ -106,8 +100,6 @@ rule calculate_ldepth_cutoff:
         csv = Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv')
     log:
         Path(logdir, 'calculate_ldepth_cutoff.log')
-    # singularity:
-    #     r
     script:
         shutil.which('calculate_ldepth_cutoff.R')
 
@@ -118,8 +110,6 @@ rule plot_stats:
         Path(outdir, '050_plots', '{ext}.pdf')
     log:
         Path(logdir, 'plot_{ext}.log')
-    # singularity:
-    #     r
     shell:
         'plot_{wildcards.ext}.R '
         '{input} '
@@ -137,8 +127,6 @@ rule vcf_stats:
     params:
         wd = Path(outdir, '040_stats'),
         arg = lambda wildcards: ext_to_arg[wildcards.ext]
-    # singularity:
-    #     vcftools
     shell:
         'cd {params.wd} || exit 1 ; '
         'vcftools '
@@ -159,8 +147,6 @@ rule merge_bam:        # for visualisation
         Path(logdir, 'merge_bam.log')
     threads:
         max_threads
-    # singularity:
-    #     samtools
     shell:
         'samtools merge '
         '-l 9 '
@@ -175,8 +161,6 @@ rule vcfuniq:
         Path(tmpdir, 'all_sort.vcf')
     output:
         Path(outdir, 'calls.vcf')
-    # singularity:
-    #     freebayes
     shell:
         'vcfuniq < {input} > {output}'
 
@@ -186,8 +170,6 @@ rule vcfstreamsort:
         Path(tmpdir, 'all_oneheader.vcf')
     output:
         pipe(Path(tmpdir, 'all_sort.vcf'))
-    # singularity:
-    #     freebayes
     shell:
         'vcfstreamsort -w 1000 < {input} >> {output}'
 
@@ -197,8 +179,6 @@ rule vcffirstheader:
         Path(tmpdir, 'all.vcf')
     output:
         pipe(Path(tmpdir, 'all_oneheader.vcf'))
-    # singularity:
-    #     freebayes
     shell:
         'vcffirstheader < {input} >> {output}'
 
@@ -207,8 +187,6 @@ rule combine_vcf:
         aggregate_regions
     output:
         pipe(Path(tmpdir, 'all.vcf'))
-    # singularity:
-    #     freebayes
     shell:
         'cat {input} >> {output}'
 
@@ -226,8 +204,6 @@ rule freebayes:
         ploidy = diploid_mode
     log:
         Path(logdir, 'r{region}_freebayes.log')
-    # singularity:
-    #     freebayes
     shell:
         'freebayes '
         '--region  "$(cat {input.region})" '
@@ -246,8 +222,6 @@ rule markdup:
         max_threads // 3
     log:
         Path(logdir, '{sample_name}_markdup.log')
-    # singularity:
-    #     samtools
     shell:
         'samtools markdup '
         '-@ {threads} '
@@ -265,8 +239,6 @@ rule sort:
         max_threads // 3
     log:
         Path(logdir, '{sample_name}_sort.log')
-    # singularity:
-    #     samtools
     shell:
         'samtools sort '
         '-@ {threads} '
@@ -284,8 +256,6 @@ rule fixmate:
         max_threads // 3
     log:
         Path(logdir, '{sample_name}_fixmate.log')
-    # singularity:
-    #     samtools
     shell:
         'samtools fixmate '
         '-m '
@@ -310,8 +280,6 @@ rule bwa_map:
         max_threads
     log:
         Path(logdir, '{sample_name}_bwa-map.log')
-    # singularity:
-    #     bwa
     shell:
         'bwa mem '
         '-t {threads} '
@@ -332,8 +300,6 @@ rule trim:
         Path(logdir, '{sample_name}_trim.log')
     params:
         trim = bbduk_adaptors
-    # singularity:
-    #     bbmap
     shell:
         'bbduk.sh '
         'in={input} '
@@ -355,8 +321,6 @@ rule filter:
         Path(logdir, '{sample_name}_filter.log')
     params:
         filter = bbduk_ref,
-    # singularity:
-    #     bbmap
     shell:
         'bbduk.sh '
         'in={input} '
@@ -379,8 +343,6 @@ rule check_barcodes:
             sample_data.loc[wildcards.sample_name, 'barcode']
     log:
         Path(statdir, '{sample_name}_check-barcodes.txt')
-    # singularity:
-    #     bbmap
     shell:
         'reformat.sh '
         'in={input} '
@@ -398,8 +360,6 @@ rule check_pairing:
         pipe = pipe(Path(tmpdir, '{sample_name}_repair.fastq')),
     log:
         Path(statdir, '{sample_name}_repair.txt')
-    # singularity:
-    #     bbmap
     shell:
         'repair.sh '
         'in={input.r1} '
@@ -419,8 +379,6 @@ rule bwa_index:
         prefix = Path(outdir, '015_ref', 'ref.fasta')
     log:
         Path(logdir, 'bwa_index.log')
-    # singularity:
-    #     bwa
     shell:
         'bwa index '
         '-p {params.prefix} '
@@ -435,8 +393,6 @@ checkpoint generate_regions:
         region = directory(Path(outdir, '015_ref', 'regions'))
     params:
         prefix = Path(outdir, '015_ref', 'regions', 'r')
-    # singularity:
-    #     freebayes
     shell:
         'mkdir {output.region} ; '
         'awk '
@@ -457,8 +413,6 @@ rule fa_index:
     output:
         fa = Path(outdir, '015_ref', 'ref.fasta'),
         fai = Path(outdir, '015_ref', 'ref.fasta.fai')
-    # singularity:
-    #     samtools
     shell:
         'cp {input} {output.fa} '
         '; '
@@ -473,23 +427,11 @@ rule index_vcf:
         tbi = Path('{folder}', '{file}.vcf.gz.tbi')
     log:
         Path(logdir, '{folder}', '{file}_index-vcf.log')
-    # singularity:
-    #     samtools
     shell:
         'bgzip -c {input} > {output.gz} 2> {log} '
         '; '
         'tabix -p vcf {output.gz} 2>> {log}'
 
-# generic reheader rule
-rule reheader_vcf:
-    input:
-        Path('{folder}', '{file}.vcf')
-    output:
-        Path('{folder}', '{file}_reheadered.vcf')
-    # singularity:
-    #     samtools
-    shell:
-        'grep -v "^##FILTER=All filters passed" {input} > {output}'
 
 # generic bamfile index
 rule index_bamfile:
@@ -501,7 +443,5 @@ rule index_bamfile:
         Path(logdir, '{folder}', '{file}_index-bamfile.log')
     threads:
         2
-    # singularity:
-    #     samtools
     shell:
         'samtools index -@ {threads} {input} 2> {log}'
