@@ -2,15 +2,17 @@ Bootstrap: docker
 From: ubuntu:19.10
 
 %help
-    Container for honeybee-genotype-pipeline v0.0.1
+    Container for honeybee-genotype-pipeline v0.0.2
     https://github.com/tomharrop/honeybee-genotype-pipeline
 
     bbmap 38.73
     bwa 0.7.17-r1188
     freebayes 1.3.1
     python 3.7.5
+    R 3.6.1 with data.table 1.12.6 and ggplot2 3.2.1
     samtools 1.9 and bcftools 1.9 using htslib 1.9
     vcflib 1.0.1
+    vcftools 0.1.16
 
 %labels
     MAINTAINER "Tom Harrop"
@@ -119,4 +121,4 @@ _EOF_
     # install pipeline package
     /usr/bin/pip3 \
         install \
-        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.1
+        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.2
