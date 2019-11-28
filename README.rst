@@ -23,7 +23,8 @@ Install
 |image0|
 
 Use the singularity container hosted on `Singularity
-hub <https://singularity-hub.org/collections/3839>`__.
+hub <https://singularity-hub.org/collections/3839>`__. The container
+provides:
 
 ::
 
@@ -31,8 +32,10 @@ hub <https://singularity-hub.org/collections/3839>`__.
    bwa 0.7.17-r1188
    freebayes 1.3.1
    python 3.7.5
+   R 3.6.1 with data.table 1.12.6 and ggplot2 3.2.1
    samtools 1.9 and bcftools 1.9 using htslib 1.9
    vcflib 1.0.1
+   vcftools 0.1.16
 
 If you have the above dependencies installed, you can install the
 pipeline with ``pip3``:

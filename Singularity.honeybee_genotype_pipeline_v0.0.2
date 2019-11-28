@@ -51,6 +51,9 @@ _EOF_
         python \
         python3 \
         python3-pip \
+        r-cran-cairo \
+        r-cran-data.table \
+        r-cran-ggplot2 \
         samtools \
         tabix \
         wget \
@@ -95,6 +98,23 @@ _EOF_
     mv scripts/freebayes-parallel.new scripts/freebayes-parallel
     chmod 755 scripts/freebayes-parallel
     cd .. || exit 1
+
+    # vcftools
+    mkdir vcftools
+    wget \
+        -O "vcftools.tar.gz" \
+        --no-check-certificate \
+        https://github.com/vcftools/vcftools/releases/download/v0.1.16/vcftools-0.1.16.tar.gz
+    tar -zxf vcftools.tar.gz \
+        -C vcftools \
+        --strip-components 2
+
+    cd vcftools || exit 1
+    ./configure
+    make 
+    make install
+    cd .. || exit 1
+    rm -rf vcftools vcftools.tar.gz
 
     # install pipeline package
     /usr/bin/pip3 \
