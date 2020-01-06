@@ -15,7 +15,6 @@ frq[, maf := min(`{FREQ}`,
     by = .(CHROM, POS)]
 
 gp <- ggplot(frq, aes(x = maf)) +
-    xlab("Minor allele frequency") + 
     ylab("Number of loci") + 
     geom_vline(xintercept = 0.1) +
     geom_histogram(binwidth = 0.01)

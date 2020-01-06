@@ -10,7 +10,7 @@ lmiss_file <- args[[1]]
 lmiss <- fread(lmiss_file)
 
 gp <- ggplot(lmiss, aes(x = F_MISS)) +
-    xlab("Number of loci") +
+    ylab("Number of loci") +
     geom_histogram(bins=50) +
     geom_vline(xintercept = 0.1)
 

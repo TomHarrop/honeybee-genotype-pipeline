@@ -90,8 +90,9 @@ rule target:
         Path(outdir, 'merged.bam.bai'),
         Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv'),
         expand(Path(outdir, '050_plots', '{ext}.pdf').as_posix(),
-               ext=list(ext_to_arg.keys()))
-
+               ext=list(ext_to_arg.keys())),
+        Path(outdir, '015_ref', 'ref.fasta'),
+        Path(outdir, '015_ref', 'ref.fasta.fai')
 
 rule calculate_ldepth_cutoff:
     input:
@@ -208,6 +209,7 @@ rule freebayes:
         'freebayes '
         '--region  "$(cat {input.region})" '
         '--ploidy {params.ploidy} '
+        '--use-best-n-alleles 4 '
         '-f {input.fa} '
         '{input.bam} '
         '> {output} '

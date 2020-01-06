@@ -10,6 +10,7 @@ imiss_file <- args[[1]]
 imiss <- fread(imiss_file)
 
 gp <- ggplot(imiss, aes(x = F_MISS)) +
+    ylab("Number of individuals") +
     geom_histogram(binwidth = 0.01)
 
 ggsave(args[[2]],
