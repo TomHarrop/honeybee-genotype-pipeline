@@ -51,9 +51,6 @@ calldir = Path(outdir, '030_calls')
 bbduk_ref = '/phix174_ill.ref.fa.gz'
 bbduk_adaptors = '/adapters.fa'
 
-# set diploid mode for freebayes
-diploid_mode = config['ploidy']
-
 # dict of extensions and arguments for vcftools
 ext_to_arg = {
     'frq': 'freq2 --max-alleles 2',
@@ -77,6 +74,14 @@ sample_data = pandas.read_csv(samples_csv,
 all_samples = sorted(set(sample_data.index))
 logging.debug(f'All samples:\n{all_samples}')
 
+# freebayes ploidy
+if config['ploidy']:
+    ploidy = config['ploidy']
+    ploidy_line = f'--ploidy {ploidy} '
+elif config['cnv_map']:
+    cnv_map = config['cnv_map']
+    ploidy_line = f'--cnv-map {cnv_map} '
+logging.debug(f'ploidy_line\n{ploidy_line}')
 
 #########
 # RULES #
@@ -201,14 +206,12 @@ rule freebayes:
         fa = Path(outdir, '015_ref', 'ref.fasta')
     output:
         vcf = Path(calldir, 'regions', 'r{region}.vcf')
-    params:
-        ploidy = diploid_mode
     log:
         Path(logdir, 'r{region}_freebayes.log')
     shell:
         'freebayes '
         '--region  "$(cat {input.region})" '
-        '--ploidy {params.ploidy} '
+        '{ploidy_line} '
         '--use-best-n-alleles 4 '
         '-f {input.fa} '
         '{input.bam} '
