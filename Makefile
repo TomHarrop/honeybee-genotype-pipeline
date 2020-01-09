@@ -14,6 +14,7 @@ graph.svg: honeybee_genotype_pipeline/Snakefile samples_head.csv
 	threads=8 \
 	samples_csv=samples_head.csv \
 	ploidy=2 \
+	cnv_map=False \
 	| dot -Tsvg \
 	> graph.svg
 

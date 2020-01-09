@@ -50,14 +50,15 @@ pip3 install \
     - `metadata` (optional): currently not used.
 - `outdir`: Output directory.
 - `ploidy`: Ploidy for freebayes, e.g. 1 for haploid, 2 for diploid.
+- `cnv_map`: Read in a whitespace-delimited file of sample names and ploidy, *e.g.* for genotyping drones and pools in a single run. See `freebayes --help` for more info.
 - `threads`: Number of threads to use. Intermediate files are pipes, so at least 4 threads are required.
 - `restart_times`: Number of times to restart failing jobs.
 
 ```
-honeybee_genotype_pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
-                                  --outdir OUTDIR [--ploidy PLOIDY]
-                                  [--threads int]
+honeybee-genotype-pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
+                                  --outdir OUTDIR [--threads int]
                                   [--restart_times RESTART_TIMES] [-n]
+                                  [--cnv_map CNV_MAP | --ploidy PLOIDY]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -65,13 +66,13 @@ optional arguments:
   --samples_csv SAMPLES_CSV
                         Sample csv (see README)
   --outdir OUTDIR       Output directory
-  --ploidy PLOIDY       Ploidy for freebayes (e.g. 1 for haploid, 2 for
-                        diploid)
   --threads int         Number of threads. Default: 1
   --restart_times RESTART_TIMES
                         number of times to restart failing jobs (default 0)
   -n                    Dry run
-
+  --cnv_map CNV_MAP     Read a copy number map from the BED file FILE
+  --ploidy PLOIDY       Ploidy for freebayes (e.g. 1 for haploid, 2 for
+                        diploid)
 ```
 
 ## Graph

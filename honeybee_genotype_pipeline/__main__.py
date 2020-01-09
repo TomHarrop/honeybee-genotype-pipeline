@@ -32,13 +32,6 @@ def parse_arguments():
         help='Output directory',
         type=str,
         dest='outdir')
-    parser.add_argument(
-        '--ploidy',
-        required=False,
-        help='Ploidy for freebayes (e.g. 1 for haploid, 2 for diploid)',
-        type=int,
-        dest='ploidy',
-        default=2)
     default_threads = 1
     parser.add_argument(
         '--threads',
@@ -59,6 +52,22 @@ def parse_arguments():
         help='Dry run',
         dest='dry_run',
         action='store_true')
+
+    ploidy_group = parser.add_mutually_exclusive_group()
+    ploidy_group.add_argument(
+        '--cnv_map',
+        required=False,
+        help='Read a copy number map from the BED file FILE',
+        type=str,
+        dest='cnv_map',
+        default=False)
+    ploidy_group.add_argument(
+        '--ploidy',
+        required=False,
+        help='Ploidy for freebayes (e.g. 1 for haploid, 2 for diploid)',
+        type=int,
+        dest='ploidy',
+        default=2)
 
     args = vars(parser.parse_args())
     return(args)
