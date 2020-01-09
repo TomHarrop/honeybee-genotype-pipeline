@@ -75,12 +75,12 @@ all_samples = sorted(set(sample_data.index))
 logging.debug(f'All samples:\n{all_samples}')
 
 # freebayes ploidy
-if config['ploidy']:
-    ploidy = config['ploidy']
-    ploidy_line = f'--ploidy {ploidy} '
-elif config['cnv_map']:
+if config['cnv_map']:
     cnv_map = config['cnv_map']
     ploidy_line = f'--cnv-map {cnv_map} --pooled-discrete '
+else:
+    ploidy = config['ploidy']
+    ploidy_line = f'--ploidy {ploidy} '
 logging.debug(f'ploidy_line\n{ploidy_line}')
 
 #########
