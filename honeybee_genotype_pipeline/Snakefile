@@ -83,24 +83,31 @@ else:
     ploidy_line = f'--ploidy {ploidy} '
 logging.debug(f'ploidy_line\n{ploidy_line}')
 
+# list of snakemake targets
+target_list = [
+    Path(outdir, 'calls.vcf.gz'),
+    Path(outdir, 'calls.vcf.gz.tbi'),
+    Path(outdir, 'merged.bam'),
+    Path(outdir, 'merged.bam.bai'),
+    Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv'),
+    expand(Path(outdir, '050_plots', '{ext}.pdf').as_posix(),
+           ext=list(ext_to_arg.keys())),
+    Path(outdir, '015_ref', 'ref.fasta'),
+    Path(outdir, '015_ref', 'ref.fasta.fai'),
+    expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
+           sample_name=all_samples)]
+
+if config['csd']:
+    target_list.append(Path(outdir, 'csd.vcf.gz'))
+
+
 #########
 # RULES #
 #########
 
 rule target:
     input:
-        Path(outdir, 'calls.vcf.gz'),
-        Path(outdir, 'calls.vcf.gz.tbi'),
-        Path(outdir, 'merged.bam'),
-        Path(outdir, 'merged.bam.bai'),
-        Path(outdir, '040_stats', 'ldepth.mean_cutoffs.csv'),
-        expand(Path(outdir, '050_plots', '{ext}.pdf').as_posix(),
-               ext=list(ext_to_arg.keys())),
-        Path(outdir, '015_ref', 'ref.fasta'),
-        Path(outdir, '015_ref', 'ref.fasta.fai'),
-        expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
-               sample_name=all_samples)
-
+        target_list
 
 rule calculate_ldepth_cutoff:
     input:
@@ -220,6 +227,29 @@ rule freebayes:
         '{input.bam} '
         '> {output} '
         '2> {log}'
+
+rule freebayes_csd:
+    input:
+        bam = expand(Path(mapdir, '{sample_name}.bam').as_posix(),
+                     sample_name=all_samples),
+        bai = expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
+                     sample_name=all_samples),
+        fa = Path(outdir, '015_ref', 'ref.fasta')
+    output:
+        vcf = Path(outdir, 'csd.vcf')
+    params:
+        csd = 'NC_037640.1:11771679-11781139'
+    log:
+        Path(logdir, 'freebayes_csd.log')
+    shell:
+        'freebayes '
+        '--region  {params.csd} '
+        '{ploidy_line} '
+        '-f {input.fa} '
+        '{input.bam} '
+        '> {output} '
+        '2> {log}'
+
 
 rule markdup:
     input:

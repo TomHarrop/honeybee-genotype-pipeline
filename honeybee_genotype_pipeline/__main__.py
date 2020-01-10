@@ -15,6 +15,26 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         prog='honeybee-genotype-pipeline')
     parser.add_argument(
+        '-n',
+        help='Dry run',
+        dest='dry_run',
+        action='store_true')
+    default_threads = 4
+    parser.add_argument(
+        '--threads',
+        help=('Number of threads. Default: %i' % default_threads),
+        metavar='int',
+        type=int,
+        dest='threads',
+        default=default_threads)
+    parser.add_argument(
+        '--restart_times',
+        required=False,
+        help='number of times to restart failing jobs (default 0)',
+        type=int,
+        dest='restart_times',
+        default=0)
+    parser.add_argument(
         '--ref',
         required=True,
         help='Reference genome in uncompressed fasta',
@@ -32,27 +52,6 @@ def parse_arguments():
         help='Output directory',
         type=str,
         dest='outdir')
-    default_threads = 1
-    parser.add_argument(
-        '--threads',
-        help=('Number of threads. Default: %i' % default_threads),
-        metavar='int',
-        type=int,
-        dest='threads',
-        default=default_threads)
-    parser.add_argument(
-        '--restart_times',
-        required=False,
-        help='number of times to restart failing jobs (default 0)',
-        type=int,
-        dest='restart_times',
-        default=0)
-    parser.add_argument(
-        '-n',
-        help='Dry run',
-        dest='dry_run',
-        action='store_true')
-
     ploidy_group = parser.add_mutually_exclusive_group()
     ploidy_group.add_argument(
         '--cnv_map',
@@ -68,6 +67,11 @@ def parse_arguments():
         type=int,
         dest='ploidy',
         default=2)
+    parser.add_argument(
+        '--csd',
+        help='Do a separate freebayes run to genotype the csd locus',
+        dest='csd',
+        action='store_true')
 
     args = vars(parser.parse_args())
     return(args)

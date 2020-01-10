@@ -41,6 +41,8 @@ pip3 install \
 
 ## Usage
 
+- `threads`: Number of threads to use. Intermediate files are pipes, so at least 4 threads are required.
+- `restart_times`: Number of times to restart failing jobs.
 - `ref`: Reference genome (uncompressed fasta).
 - `samples_csv`: a csv file with the following columns:
     - `sample`: sample name (will be propagated to output files and VCF);
@@ -49,30 +51,31 @@ pip3 install \
     - `r2_path`: path to R2 file;
     - `metadata` (optional): currently not used.
 - `outdir`: Output directory.
-- `ploidy`: Ploidy for freebayes, e.g. 1 for haploid, 2 for diploid.
 - `cnv_map`: Read in a whitespace-delimited file of sample names and ploidy, *e.g.* for genotyping drones and pools in a single run. See `freebayes --help` for more info.
-- `threads`: Number of threads to use. Intermediate files are pipes, so at least 4 threads are required.
-- `restart_times`: Number of times to restart failing jobs.
+- `ploidy`: Ploidy for freebayes, e.g. 1 for haploid, 2 for diploid.
+- `csd`: Do a separate freebayes run to pick up **all** alleles at the *csd* locus (*i.e.* `--region NC_037640.1:11771679-11781139`).
 
 ```
-honeybee-genotype-pipeline [-h] --ref REF --samples_csv SAMPLES_CSV
-                                  --outdir OUTDIR [--threads int]
-                                  [--restart_times RESTART_TIMES] [-n]
+honeybee-genotype-pipeline [-h] [-n] [--threads int]
+                                  [--restart_times RESTART_TIMES] --ref REF
+                                  --samples_csv SAMPLES_CSV --outdir OUTDIR
                                   [--cnv_map CNV_MAP | --ploidy PLOIDY]
+                                  [--csd]
 
 optional arguments:
   -h, --help            show this help message and exit
+  -n                    Dry run
+  --threads int         Number of threads. Default: 4
+  --restart_times RESTART_TIMES
+                        number of times to restart failing jobs (default 0)
   --ref REF             Reference genome in uncompressed fasta
   --samples_csv SAMPLES_CSV
                         Sample csv (see README)
   --outdir OUTDIR       Output directory
-  --threads int         Number of threads. Default: 1
-  --restart_times RESTART_TIMES
-                        number of times to restart failing jobs (default 0)
-  -n                    Dry run
   --cnv_map CNV_MAP     Read a copy number map from the BED file FILE
   --ploidy PLOIDY       Ploidy for freebayes (e.g. 1 for haploid, 2 for
                         diploid)
+  --csd                 Do a separate freebayes run to genotype the csd locus
 ```
 
 ## Graph
