@@ -7,14 +7,15 @@ graph.svg: honeybee_genotype_pipeline/Snakefile samples_head.csv
 	-n \
 	-s honeybee_genotype_pipeline/Snakefile \
 	--cores 8 \
-	--rulegraph \
+	--dag \
 	--forceall \
-	--config ref=data/GCF_003254395.2_Amel_HAv3.1_genomic.fna \
-	outdir=test \
+	--config ref=data/ref.fa \
+	outdir=out \
 	threads=8 \
-	samples_csv=samples_head.csv \
+	samples_csv=data/sample_info.example.csv \
 	ploidy=2 \
 	cnv_map=False \
+	csd=True \
 	| dot -Tsvg \
 	> graph.svg
 

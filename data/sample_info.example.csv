@@ -1,0 +1,2 @@
+sample,barcode,r1_path,r2_path,metadata
+my_sample,ATTACTCG+AGGCTATA,data/my_sample.R1.fq.gz,data/my_sample.R2.fq.gz,
