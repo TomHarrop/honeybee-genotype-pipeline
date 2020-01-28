@@ -133,6 +133,10 @@ rule plot_stats:
         '&> {log}'
 
 
+##################################
+# VAR CALLING AND VCF PROCESSING #
+##################################
+
 rule vcf_stats:
     input:
         Path(outdir, 'calls.vcf.gz')
@@ -152,26 +156,6 @@ rule vcf_stats:
         '--out stats '
         '2> ' + resolve_path('{log}')
 
-
-rule merge_bam:        # for visualisation
-    input:
-        bam = expand(Path(mapdir, '{sample_name}.bam').as_posix(),
-                     sample_name=all_samples),
-    output:
-        Path(outdir, 'merged.bam')
-    log:
-        Path(logdir, 'merge_bam.log')
-    threads:
-        max_threads
-    shell:
-        'samtools merge '
-        '-l 9 '
-        '-O BAM '
-        '-@ {threads} '
-        '{output} '
-        '{input.bam} '
-        '2> {log}'
-
 rule vcfuniq:
     input:
         Path(tmpdir, 'all_sort.vcf')
@@ -180,7 +164,6 @@ rule vcfuniq:
     shell:
         'vcfuniq < {input} > {output}'
 
-
 rule vcfstreamsort:
     input:
         Path(tmpdir, 'all_oneheader.vcf')
@@ -188,7 +171,6 @@ rule vcfstreamsort:
         pipe(Path(tmpdir, 'all_sort.vcf'))
     shell:
         'vcfstreamsort -w 1000 < {input} >> {output}'
-
 
 rule vcffirstheader:
     input:
@@ -250,6 +232,50 @@ rule freebayes_csd:
         '> {output} '
         '2> {log}'
 
+checkpoint generate_regions:
+    input:
+        fai = Path(outdir, '015_ref', 'ref.fasta.fai')
+    output:
+        region = directory(Path(outdir, '015_ref', 'regions'))
+    params:
+        prefix = Path(outdir, '015_ref', 'regions', 'r')
+    shell:
+        'mkdir {output.region} ; '
+        'awk '
+        '\'{{printf("%s:1-%d\\n",$1,$2);}}\' '
+        '{input} '
+        '| '
+        'split '
+        '-a 4 '
+        '-l 1 '
+        '-d '
+        '- '
+        '{params.prefix}'
+
+
+##############################
+# MAPPING AND BAM PROCESSING #
+##############################
+
+# for visualisation
+rule merge_bam:
+    input:
+        bam = expand(Path(mapdir, '{sample_name}.bam').as_posix(),
+                     sample_name=all_samples),
+    output:
+        Path(outdir, 'merged.bam')
+    log:
+        Path(logdir, 'merge_bam.log')
+    threads:
+        max_threads
+    shell:
+        'samtools merge '
+        '-l 9 '
+        '-O BAM '
+        '-@ {threads} '
+        '{output} '
+        '{input.bam} '
+        '2> {log}'
 
 rule markdup:
     input:
@@ -283,7 +309,6 @@ rule sort:
         '{input} '
         '>> {output} '
         '2> {log}'
-
 
 rule fixmate:
     input:
@@ -327,6 +352,27 @@ rule bwa_map:
         '{input.fq} '
         '> {output} '
         '2> {log}'
+
+rule bwa_index:
+    input:
+        ref
+    output:
+        expand(Path(outdir, '015_ref', 'ref.fasta.{suffix}').as_posix(),
+               suffix=['amb', 'ann', 'bwt', 'pac', 'sa'])
+    params:
+        prefix = Path(outdir, '015_ref', 'ref.fasta')
+    log:
+        Path(logdir, 'bwa_index.log')
+    shell:
+        'bwa index '
+        '-p {params.prefix} '
+        '{input} '
+        '2> {log}'
+
+
+#######################
+# RAW READ PROCESSING #
+#######################
 
 rule trim:
     input:
@@ -406,45 +452,12 @@ rule check_pairing:
         '>> {output.pipe} '
         '2> {log}'
 
-# bwa index rule
-rule bwa_index:
-    input:
-        ref
-    output:
-        expand(Path(outdir, '015_ref', 'ref.fasta.{suffix}').as_posix(),
-               suffix=['amb', 'ann', 'bwt', 'pac', 'sa'])
-    params:
-        prefix = Path(outdir, '015_ref', 'ref.fasta')
-    log:
-        Path(logdir, 'bwa_index.log')
-    shell:
-        'bwa index '
-        '-p {params.prefix} '
-        '{input} '
-        '2> {log}'
 
-# generate regions for freebayes
-checkpoint generate_regions:
-    input:
-        fai = Path(outdir, '015_ref', 'ref.fasta.fai')
-    output:
-        region = directory(Path(outdir, '015_ref', 'regions'))
-    params:
-        prefix = Path(outdir, '015_ref', 'regions', 'r')
-    shell:
-        'mkdir {output.region} ; '
-        'awk '
-        '\'{{printf("%s:1-%d\\n",$1,$2);}}\' '
-        '{input} '
-        '| '
-        'split '
-        '-a 4 '
-        '-l 1 '
-        '-d '
-        '- '
-        '{params.prefix}'
+#################
+# GENERIC RULES #
+#################
 
-# fasta index rule
+# fasta index
 rule fa_index:
     input:
         ref
@@ -456,7 +469,7 @@ rule fa_index:
         '; '
         'samtools faidx {output.fa}'
 
-# generic index rule
+# vcf index
 rule index_vcf:
     input:
         Path('{folder}', '{file}.vcf')
@@ -471,7 +484,7 @@ rule index_vcf:
         'tabix -p vcf {output.gz} 2>> {log}'
 
 
-# generic bamfile index
+# bamfile index
 rule index_bamfile:
     input:
         Path('{folder}', '{file}.bam')
