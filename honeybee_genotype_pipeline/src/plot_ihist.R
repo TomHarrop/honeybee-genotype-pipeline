@@ -32,12 +32,13 @@ mean_dt <- ihist_data[, .(meansize = CalculateMeanInsert(.SD)),
                       by = sample]
 
 # configure plot
-y_pos <- ihist_data[, max(Count)]
+y_pos <- ihist_data[, max(Count) * 0.95]
 vd <- viridisLite::viridis(3)
 
 # plot
 gp <- ggplot(ihist_data,
        aes(x = `#InsertSize`, y = Count)) + 
+    theme_grey(base_size = 6) +
     facet_wrap(~ sample) + 
     xlab("Mapped insert size") + 
     geom_vline(mapping = aes(xintercept = meansize),
@@ -49,7 +50,8 @@ gp <- ggplot(ihist_data,
                             label = meansize),
               hjust = "inward",
               colour = vd[[2]],
-              data = mean_dt) +
+              data = mean_dt,
+              size = 2) +
     geom_area(fill = alpha(vd[[1]], 0.5))
 
 ggsave(snakemake@output[["plot"]],
