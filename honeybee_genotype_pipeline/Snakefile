@@ -95,7 +95,10 @@ target_list = [
     Path(outdir, '015_ref', 'ref.fasta'),
     Path(outdir, '015_ref', 'ref.fasta.fai'),
     expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
-           sample_name=all_samples)]
+           sample_name=all_samples),
+    expand(Path(mapdir, '{sample_name}.ihist').as_posix(),
+           sample_name=all_samples),
+    Path(outdir, '050_plots', 'insert_size_histograms.pdf')]
 
 if config['csd']:
     target_list.append(Path(outdir, 'csd.vcf.gz'))
@@ -275,6 +278,35 @@ rule merge_bam:
         '-@ {threads} '
         '{output} '
         '{input.bam} '
+        '2> {log}'
+
+rule plot_ihist:
+    input:
+        ihist_files = expand(Path(mapdir, '{sample_name}.ihist').as_posix(),
+                             sample_name=all_samples)
+    output:
+        plot = Path(outdir, '050_plots', 'insert_size_histograms.pdf')
+    log:
+        Path(logdir, 'plot_ihist.log')
+    script:
+        shutil.which('plot_ihist.R')
+
+rule ihist:
+    input:
+        Path(mapdir, '{sample_name}.bam')
+    output:
+        Path(mapdir, '{sample_name}.ihist')
+    log:
+        Path(logdir, 'ihist.{sample_name}.log')
+    shell:
+        'reformat.sh '
+        'in={input} '
+        'out=/dev/null '
+        'ihist={output} '
+        'mappedonly=t '
+        'pairedonly=t '
+        'primaryonly=t '
+        'filterbits=1024 '
         '2> {log}'
 
 rule markdup:
