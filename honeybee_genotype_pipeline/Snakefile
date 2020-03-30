@@ -314,13 +314,11 @@ rule markdup:
         Path(tmpdir, '{sample_name}_sort.bam')
     output:
         Path(mapdir, '{sample_name}.bam')
-    threads:
-        max_threads // 3
     log:
         Path(logdir, '{sample_name}_markdup.log')
     shell:
         'samtools markdup '
-        '-@ {threads} '
+        f'-@ {max_threads // 3} '
         '-s '
         '{input} '
         '{output} '
@@ -331,13 +329,11 @@ rule sort:
         Path(tmpdir, '{sample_name}_fixmate.bam')
     output:
         pipe(Path(tmpdir, '{sample_name}_sort.bam'))
-    threads:
-        max_threads // 3
     log:
         Path(logdir, '{sample_name}_sort.log')
     shell:
         'samtools sort '
-        '-@ {threads} '
+        f'-@ {max_threads // 3} '
         '{input} '
         '>> {output} '
         '2> {log}'
@@ -347,14 +343,12 @@ rule fixmate:
         Path(tmpdir, '{sample_name}.sam')
     output:
         pipe(Path(tmpdir, '{sample_name}_fixmate.bam'))
-    threads:
-        max_threads // 3
     log:
         Path(logdir, '{sample_name}_fixmate.log')
     shell:
         'samtools fixmate '
         '-m '
-        '-@ {threads} '
+        f'-@ {max_threads // 3} '
         '{input} '
         '- '
         '>> {output} '
@@ -372,12 +366,12 @@ rule bwa_map:
         prefix = Path(outdir, '015_ref', 'ref.fasta'),
         rg = '\'@RG\\tID:{sample_name}\\tSM:{sample_name}\''
     threads:
-        max_threads
+        max(max_threads - 3, 1)
     log:
         Path(logdir, '{sample_name}_bwa-map.log')
     shell:
         'bwa mem '
-        '-t {threads} '
+        f'-t {max_threads} '
         '-p '
         '-R {params.rg} '
         '{params.prefix} '
