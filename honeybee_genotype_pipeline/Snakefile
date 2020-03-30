@@ -270,7 +270,7 @@ rule merge_bam:
     log:
         Path(logdir, 'merge_bam.log')
     threads:
-        max_threads
+        min(20, max_threads)
     shell:
         'samtools merge '
         '-l 9 '
