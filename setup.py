@@ -13,7 +13,7 @@ def readme():
 
 setup(
     name='honeybee_genotype_pipeline',
-    version='0.0.8',
+    version='0.0.9',
     description='python3 wrapper for calling genotypes',
     long_description=readme(),
     url='https://github.com/tomharrop/honeybee-genotype-pipeline',

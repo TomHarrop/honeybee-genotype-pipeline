@@ -24,7 +24,7 @@ Use the singularity container hosted on [Singularity hub](https://singularity-hu
 ```
 bbmap 38.73
 bwa 0.7.17-r1188
-freebayes 1.3.1
+freebayes 1.3.2
 python 3.7.5
 R 3.6.1 with data.table 1.12.6 and ggplot2 3.2.1
 samtools 1.9 and bcftools 1.9 using htslib 1.9

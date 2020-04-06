@@ -171,7 +171,7 @@ rule vcfstreamsort:
     input:
         Path(tmpdir, 'all_oneheader.vcf')
     output:
-        pipe(Path(tmpdir, 'all_sort.vcf'))
+        temp(Path(tmpdir, 'all_sort.vcf'))
     shell:
         'vcfstreamsort -w 1000 < {input} >> {output}'
 
@@ -179,7 +179,7 @@ rule vcffirstheader:
     input:
         Path(tmpdir, 'all.vcf')
     output:
-        pipe(Path(tmpdir, 'all_oneheader.vcf'))
+        temp(Path(tmpdir, 'all_oneheader.vcf'))
     shell:
         'vcffirstheader < {input} >> {output}'
 
@@ -187,7 +187,7 @@ rule combine_vcf:
     input:
         aggregate_regions
     output:
-        pipe(Path(tmpdir, 'all.vcf'))
+        temp(Path(tmpdir, 'all.vcf'))
     shell:
         'cat {input} >> {output}'
 
