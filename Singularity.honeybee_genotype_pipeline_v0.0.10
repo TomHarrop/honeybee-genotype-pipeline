@@ -45,6 +45,7 @@ _EOF_
         bc \
         build-essential \
         bwa \
+        cmake \
         default-jre-headless \
         git \
         libbz2-dev \
@@ -122,4 +123,4 @@ _EOF_
     # install pipeline package
     /usr/bin/pip3 \
         install \
-        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.9
+        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.10

@@ -188,8 +188,8 @@ rule combine_vcf:
         aggregate_regions
     output:
         temp(Path(tmpdir, 'all.vcf'))
-    shell:
-        'cat {input} >> {output}'
+    script:
+        shutil.which('combine_vcf.py')
 
 rule freebayes:
     input:
