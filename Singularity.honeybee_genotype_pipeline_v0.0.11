@@ -26,6 +26,8 @@ From: ubuntu:19.10
 
 %post
         export DEBIAN_FRONTEND=noninteractive
+        export LC_ALL=C
+
     (
         . /etc/os-release
         cat << _EOF_ > mirror.txt
