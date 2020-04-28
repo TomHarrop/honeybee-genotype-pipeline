@@ -410,8 +410,11 @@ rule trim:
         Path(logdir, '{sample_name}_trim.log')
     params:
         trim = bbduk_adaptors
+    threads:
+        max(3, int(max_threads / len(all_samples) // 2))
     shell:
         'bbduk.sh '
+        'threads={threads} '
         'in={input} '
         'int=t '
         'out={output.fastq} '
@@ -430,9 +433,12 @@ rule filter:
     log:
         Path(logdir, '{sample_name}_filter.log')
     params:
-        filter = bbduk_ref,
+        filter = bbduk_ref
+    threads:
+        max(3, int(max_threads / len(all_samples) // 2))
     shell:
         'bbduk.sh '
+        'threads={threads} '
         'in={input} '
         'int=t '
         'out=stdout.fastq '
@@ -453,6 +459,8 @@ rule check_barcodes:
             sample_data.loc[wildcards.sample_name, 'barcode']
     log:
         Path(statdir, '{sample_name}_check-barcodes.txt')
+    threads:
+        1
     shell:
         'reformat.sh '
         'in={input} '
@@ -470,6 +478,8 @@ rule check_pairing:
         pipe = pipe(Path(tmpdir, '{sample_name}_repair.fastq')),
     log:
         Path(statdir, '{sample_name}_repair.txt')
+    threads:
+        1
     shell:
         'repair.sh '
         'in={input.r1} '
