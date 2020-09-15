@@ -12,8 +12,8 @@ import shutil
 
 def aggregate_regions(wildcards):
     co = checkpoints.generate_regions.get(**wildcards).output['region']
-    r = glob_wildcards(Path(co, 'r{region}')).region
-    return expand(Path(calldir, 'regions', 'r{region}.vcf').as_posix(),
+    r = glob_wildcards(Path(co, '{region}.fasta')).region
+    return expand(Path(calldir, 'regions', '{region}.vcf').as_posix(),
                   region=r)
 
 
@@ -197,15 +197,15 @@ rule freebayes:
                      sample_name=all_samples),
         bai = expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
                      sample_name=all_samples),
-        region = Path(outdir, '015_ref', 'regions', 'r{region}'),
+        region = Path(outdir, '015_ref', 'regions', '{region}.fasta'),
         fa = Path(outdir, '015_ref', 'ref.fasta')
     output:
-        vcf = Path(calldir, 'regions', 'r{region}.vcf')
+        vcf = Path(calldir, 'regions', '{region}.vcf')
     log:
-        Path(logdir, 'r{region}_freebayes.log')
+        Path(logdir, '{region}_freebayes.log')
     shell:
         'freebayes '
-        '--region  "$(cat {input.region})" '
+        '--region {wildcards.region} '
         '{ploidy_line} '
         '--use-best-n-alleles 4 '
         '-f {input.fa} '
@@ -237,23 +237,20 @@ rule freebayes_csd:
 
 checkpoint generate_regions:
     input:
-        fai = Path(outdir, '015_ref', 'ref.fasta.fai')
+        fa = Path(outdir, '015_ref', 'ref.fasta')
     output:
         region = directory(Path(outdir, '015_ref', 'regions'))
     params:
-        prefix = Path(outdir, '015_ref', 'regions', 'r')
+        output = Path(outdir, '015_ref', 'regions', '%.fasta')
+    log:
+        'output/logs/generate_regions.log'
     shell:
-        'mkdir {output.region} ; '
-        'awk '
-        '\'{{printf("%s:1-%d\\n",$1,$2);}}\' '
-        '{input} '
-        '| '
-        'split '
-        '-a 4 '
-        '-l 1 '
-        '-d '
-        '- '
-        '{params.prefix}'
+        'demuxbyname.sh '
+        'in={input.fa} '
+        'out={params.output} '
+        'delimiter=whitespace '
+        'column=1 '
+        '2> {log}'
 
 
 ##############################
