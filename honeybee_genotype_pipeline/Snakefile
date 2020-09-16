@@ -10,20 +10,12 @@ import shutil
 # FUNCTIONS #
 #############
 
-# def aggregate_regions(wildcards):
-#     co = checkpoints.generate_regions.get(**wildcards).output['region']
-#     r = glob_wildcards(Path(co, '{region}.fasta')).region
-#     return expand(Path(calldir, 'regions', '{region}.vcf').as_posix(),
-#                   region=r)
-
 
 def read_regions(wildcards):
     fai = checkpoints.fa_index.get(**wildcards).output['fai']
     r = sorted(set(pandas.read_csv(fai, sep='\t', header=None)[0]))
-    print(r)
     return expand(Path(calldir, 'regions', '{region}.vcf').as_posix(),
                   region=r)
-
 
 
 def resolve_raw_fastq(wildcards):
@@ -206,7 +198,6 @@ rule freebayes:
                      sample_name=all_samples),
         bai = expand(Path(mapdir, '{sample_name}.bam.bai').as_posix(),
                      sample_name=all_samples),
-        # region = Path(outdir, '015_ref', 'regions', '{region}.fasta'),
         fa = Path(outdir, '015_ref', 'ref.fasta')
     output:
         vcf = Path(calldir, 'regions', '{region}.vcf')
@@ -243,23 +234,6 @@ rule freebayes_csd:
         '{input.bam} '
         '> {output} '
         '2> {log}'
-
-# checkpoint generate_regions:
-#     input:
-#         fa = Path(outdir, '015_ref', 'ref.fasta')
-#     output:
-#         region = directory(Path(outdir, '015_ref', 'regions'))
-#     params:
-#         output = Path(outdir, '015_ref', 'regions', '%.fasta')
-#     log:
-#         'output/logs/generate_regions.log'
-#     shell:
-#         'demuxbyname.sh '
-#         'in={input.fa} '
-#         'out={params.output} '
-#         'delimiter=whitespace '
-#         'column=1 '
-#         '2> {log}'
 
 
 ##############################
@@ -538,3 +512,20 @@ rule index_bamfile:
         2
     shell:
         'samtools index -@ {threads} {input} 2> {log}'
+
+
+###########
+# TIDY UP #
+###########
+
+onsuccess:
+    for tmp_path in [Path(calldir, 'regions'), Path(outdir, 'tmp')]:
+        try:
+            logging.info(f'Removing temporary files from {tmp_path}')
+            logging.info('This can take a while...')
+            shutil.rmtree(tmp_path)
+            logging.info('...done')
+        except FileNotFoundError as e:
+            logging.info(e)
+            logging.info(f'Hopefully this means {tmp_path} '
+                         'was already removed when the pipeline finished :S')

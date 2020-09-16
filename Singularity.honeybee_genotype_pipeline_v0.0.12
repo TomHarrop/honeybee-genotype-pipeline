@@ -1,8 +1,8 @@
 Bootstrap: docker
-From: ubuntu:19.10
+From: ubuntu:20.04
 
 %help
-    Container for honeybee-genotype-pipeline v0.0.9
+    Container for honeybee-genotype-pipeline v0.0.12
     https://github.com/tomharrop/honeybee-genotype-pipeline
 
     bbmap 38.73
@@ -125,4 +125,4 @@ _EOF_
     # install pipeline package
     /usr/bin/pip3 \
         install \
-        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.11
+        git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.12

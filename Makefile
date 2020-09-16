@@ -16,6 +16,7 @@ graph.svg: honeybee_genotype_pipeline/Snakefile samples_head.csv
 	ploidy=2 \
 	cnv_map=False \
 	csd=True \
+	| grep -v "^[[:space:]+]0" | grep -v "\->[[:space:]]0" \
 	| dot -Tsvg \
 	> graph.svg
 
