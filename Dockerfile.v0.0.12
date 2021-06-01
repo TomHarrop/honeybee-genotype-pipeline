@@ -76,7 +76,7 @@ RUN     git clone \
 WORKDIR /freebayes
 RUN     git checkout tags/v1.3.2 && \
         git submodule update --init --recursive && \
-        make -j
+        make
 
 
 # fix freebayes scripts
