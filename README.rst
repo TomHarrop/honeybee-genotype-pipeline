@@ -23,7 +23,9 @@ Install
 
 Use the singularity container from the
 `Releases <https://github.com/TomHarrop/honeybee-genotype-pipeline/releases>`__
-tab. The container provides:
+tab or the Docker container from
+`GHCR <https://github.com/users/TomHarrop/packages/container/package/honeybee-genotype-pipeline>`__.
+The container provides:
 
 ::
 

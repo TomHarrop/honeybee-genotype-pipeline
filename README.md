@@ -19,7 +19,7 @@ In another pipeline (coming soon):
 
 ## Install
 
-Use the singularity container from the [Releases](https://github.com/TomHarrop/honeybee-genotype-pipeline/releases) tab. The container provides:
+Use the singularity container from the [Releases](https://github.com/TomHarrop/honeybee-genotype-pipeline/releases) tab or the Docker container from [GHCR](https://github.com/users/TomHarrop/packages/container/package/honeybee-genotype-pipeline). The container provides:
 
 ```
 bbmap 38.90
