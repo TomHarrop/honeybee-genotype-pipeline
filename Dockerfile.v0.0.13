@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 LABEL SOFTWARE_NAME honeybee-genotype-pipeline
 LABEL MAINTAINER "Tom Harrop"
-LABEL VERSION "v0.0.12"
+LABEL VERSION "v0.0.13"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LC_ALL=C
@@ -114,4 +114,4 @@ RUN     python3 -m pip install --upgrade \
             setuptools \
             wheel && \
         python3 -m pip install \
-            git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.12
+            git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.13
