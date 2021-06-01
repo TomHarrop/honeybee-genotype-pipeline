@@ -3,7 +3,7 @@ name: docker-sif-deploy
 on:
   push:
     branches:
-      - "main"
+      - "master"
 
 jobs:
   release:
