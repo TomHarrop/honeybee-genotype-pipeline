@@ -1,0 +1,116 @@
+FROM ubuntu:20.04
+
+LABEL SOFTWARE_NAME honeybee-genotype-pipeline
+LABEL MAINTAINER "Tom Harrop"
+LABEL VERSION "v0.0.12"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LC_ALL=C
+ENV PATH "${PATH}:/vcflib/bin:/freebayes/bin:/freebayes/scripts"
+
+ENTRYPOINT ["/usr/local/bin/honeybee_genotype_pipeline"]
+
+RUN     apt-get clean && \
+        rm -r /var/lib/apt/lists/*
+
+RUN     . /etc/os-release \
+        echo "deb mirror://mirrors.ubuntu.com/mirrors.txt ${UBUNTU_CODENAME} main restricted universe multiverse" >> mirror.txt && \
+        echo "deb mirror://mirrors.ubuntu.com/mirrors.txt ${UBUNTU_CODENAME}-updates main restricted universe multiverse" >> mirror.txt && \
+        echo "deb mirror://mirrors.ubuntu.com/mirrors.txt ${UBUNTU_CODENAME}-backports main restricted universe multiverse" >> mirror.txt && \
+        echo "deb mirror://mirrors.ubuntu.com/mirrors.txt ${UBUNTU_CODENAME}-security main restricted universe multiverse" >> mirror.txt && \
+        mv /etc/apt/sources.list /etc/apt/sources.list.bak && \
+        cat mirror.txt /etc/apt/sources.list.bak > /etc/apt/sources.list && \
+        apt-get update && apt-get upgrade -y --fix-missing
+
+RUN     apt-get update && apt-get install -y  --no-install-recommends \
+                bc \
+                bcftools \
+                build-essential \
+                bwa \
+                cmake \
+                default-jre-headless \
+                git \
+                libbz2-dev \
+                liblzma-dev \
+                libtabixpp-dev \
+                parallel \
+                python \
+                python3 \
+                python3-pip \
+                r-cran-cairo \
+                r-cran-data.table \
+                r-cran-ggplot2 \
+                samtools \
+                tabix \
+                wget \
+                zlib1g-dev
+
+# bbmap install
+RUN     mkdir /bbmap && \
+        wget -O "/bbmap.tar.gz" \
+            --no-check-certificate \
+            https://sourceforge.net/projects/bbmap/files/BBMap_38.90.tar.gz &&\
+        tar -zxf /bbmap.tar.gz \
+            -C /bbmap \
+            --strip-components 1
+
+RUN     cp -r /bbmap/resources/* / && \
+        cp -r /bbmap/* /usr/local/bin/
+
+RUN     rm -r /bbmap /bbmap.tar.gz
+
+
+# vcflib
+RUN     git clone \
+        https://github.com/vcflib/vcflib.git \
+        /vcflib
+WORKDIR /vcflib
+RUN     git checkout tags/v1.0.1 && \
+        git submodule update --init --recursive && \
+        make openmp
+
+# freebayes
+RUN     git clone \
+            https://github.com/ekg/freebayes.git \
+            /freebayes
+WORKDIR /freebayes
+RUN     git checkout tags/v1.3.2 && \
+        git submodule update --init --recursive && \
+        make -j
+
+
+# fix freebayes scripts
+RUN     sed \
+            's/..\/vcflib\/scripts\/vcffirstheader/vcffirstheader/g' \
+            scripts/freebayes-parallel \
+            | sed \
+            's/..\/vcflib\/bin\/vcfstreamsort/vcfstreamsort/g' \
+            > scripts/freebayes-parallel.new && \
+        rm scripts/freebayes-parallel && \
+        mv scripts/freebayes-parallel.new scripts/freebayes-parallel && \
+        chmod 755 scripts/freebayes-parallel
+
+# vcftools
+WORKDIR /
+RUN     mkdir /vcftools && \
+        wget \
+            -O "/vcftools.tar.gz" \
+            --no-check-certificate \
+            https://github.com/vcftools/vcftools/releases/download/v0.1.16/vcftools-0.1.16.tar.gz && \
+        tar -zxf /vcftools.tar.gz \
+            -C /vcftools \
+            --strip-components 2
+WORKDIR /vcftools
+RUN    ./configure && \
+        make -j && \
+        make install
+WORKDIR /
+RUN     rm -rf /vcftools /vcftools.tar.gz
+
+# install pipeline package
+RUN     python3 -m pip install --upgrade \
+            pip \
+            setuptools \
+            wheel && \
+        python3 -m pip install \
+            git+git://github.com/tomharrop/honeybee-genotype-pipeline.git@v0.0.12
