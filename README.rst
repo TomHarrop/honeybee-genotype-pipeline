@@ -2,7 +2,8 @@ honeybee genotype pipeline
 ==========================
 
 Preconfigured pipeline for converting Illumina reads into VCF for *Apis
-mellifera*.
+mellifera*. The input should be demultiplexed. Reads for each sample
+should be non-interleaved (*i.e.* separate ``r1`` and ``r2`` files).
 
 1. Check pairing
 2. Strict barcode check
@@ -20,20 +21,18 @@ In another pipeline (coming soon):
 Install
 -------
 
-|image0|
-
-Use the singularity container hosted on `Singularity
-hub <https://singularity-hub.org/collections/3839>`__. The container
-provides:
+Use the singularity container from the
+`Releases <https://github.com/TomHarrop/honeybee-genotype-pipeline/releases>`__
+tab. The container provides:
 
 ::
 
-   bbmap 38.73
+   bbmap 38.90
    bwa 0.7.17-r1188
-   freebayes 1.3.1
-   python 3.7.5
-   R 3.6.1 with data.table 1.12.6 and ggplot2 3.2.1
-   samtools 1.9 and bcftools 1.9 using htslib 1.9
+   freebayes 1.3.2
+   python 3.8.5
+   R 3.6.3 with data.table 1.12.8 and ggplot2 3.3.0
+   samtools 1.10 and bcftools 1.10.2 using htslib 1.10.2-3
    vcflib 1.0.1
    vcftools 0.1.16
 
@@ -58,8 +57,8 @@ Usage
       VCF);
    -  ``barcode``: sample barcode, will be checked with 0 allowed
       mismatches;
-   -  ``r1_path``: path to R1 file;
-   -  ``r2_path``: path to R2 file;
+   -  ``r1_path``: path to R1 file for this ``sample``;
+   -  ``r2_path``: path to R2 file for this ``sample``;
    -  ``metadata`` (optional): currently not used.
 
 -  ``outdir``: Output directory.
@@ -96,14 +95,9 @@ Usage
 Graph
 -----
 
-|image1|
+.. image:: graph.svg
 
 **n.b.** ``freebayes`` doesn’t print in the ``snakemake`` rulegraph,
 because it comes after a `checkpoint
 rule <https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution>`__.
 The input is from ``markdup`` and ``generate_regions``.
-
-.. |image0| image:: https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg
-   :target: https://singularity-hub.org/collections/3839
-.. |image1| image:: graph.svg
-
