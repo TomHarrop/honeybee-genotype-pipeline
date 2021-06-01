@@ -67,7 +67,7 @@ RUN     git clone \
 WORKDIR /vcflib
 RUN     git checkout tags/v1.0.1 && \
         git submodule update --init --recursive && \
-        make openmp
+        make -j openmp
 
 # freebayes
 RUN     git clone \
