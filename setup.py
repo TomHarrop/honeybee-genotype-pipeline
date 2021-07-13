@@ -23,7 +23,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pandas>=0.25.3',
-        'snakemake==5.24.2'
+        'snakemake==5.25.0'
     ],
     entry_points={
         'console_scripts': [
